@@ -197,6 +197,10 @@ final class Module_GoogleAuth extends GDO_Module
 		if ($name)
 		{
 			$user->saveSettingVar('GoogleAuth', 'google_real_name', $name);
+			if (!$user->hasDisplayName())
+			{
+				$user->saveVar('user_display_name', $name);
+			}
 		}
 		$this->importAvatar($user, $subject, $picture);
 		return $user;
