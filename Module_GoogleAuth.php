@@ -12,6 +12,7 @@ use GDO\Core\GDT_Hook;
 use GDO\Form\GDT_Form;
 use GDO\Mail\Module_Mail;
 use GDO\Net\GDT_IP;
+use GDO\Net\GDT_Url;
 use GDO\UI\GDT_Button;
 use GDO\User\GDO_User;
 use GDO\User\GDT_UserType;
@@ -70,7 +71,7 @@ final class Module_GoogleAuth extends GDO_Module
 
     private function getRedirectURI(): string
     {
-        return url('GoogleAuth', 'Callback');
+        return GDT_Url::absolute('/googleauth.callback.html');
     }
 
 	public function hookLoginForm(GDT_Form $form): void { $this->addButton($form); }
