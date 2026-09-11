@@ -36,17 +36,17 @@ final class Module_GoogleAuth extends GDO_Module
 
 	public function getConfig(): array
 	{
-		$clientID = null;
+		$clientID = $clientSecret = null;
         if (FileUtil::isFile($this->filePath('secret.php')))
         {
             $json = require $this->filePath('secret.php');
 			$clientID = $json->web->client_id ?? null;
+            $clientSecret = $json->web->client_secret ?? null;
         }
 		return [
-			GDT_Checkbox::make('google_auth')->initial('0'),
+			GDT_Checkbox::make('google_auth')->initial($clientID && $clientSecret ? '1' : '0'),
 			GDT_Secret::make('google_client_id')->ascii()->caseS()->max(191)->initial($clientID),
-			GDT_Secret::make('google_client_secret')->ascii()->caseS()->max(191),
-//			GDT_String::make('google_redirect_uri')->ascii()->caseS()->max(1024),
+			GDT_Secret::make('google_client_secret')->ascii()->caseS()->max(191)->initial($clientSecret),
 			GDT_Checkbox::make('google_import_avatar')->initial('1'),
 		];
 	}
