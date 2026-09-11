@@ -15,6 +15,7 @@ use GDO\Net\GDT_IP;
 use GDO\UI\GDT_Button;
 use GDO\User\GDO_User;
 use GDO\User\GDT_UserType;
+use GDO\Util\FileUtil;
 
 /** Google OpenID Connect authentication provider. */
 final class Module_GoogleAuth extends GDO_Module
@@ -35,11 +36,17 @@ final class Module_GoogleAuth extends GDO_Module
 
 	public function getConfig(): array
 	{
+		$clientID = null;
+        if (FileUtil::isFile($this->filePath('secret.php')))
+        {
+            $json = require $this->filePath('secret.php');
+			$clientID = $json->web->client_id ?? null;
+        }
 		return [
 			GDT_Checkbox::make('google_auth')->initial('0'),
-			GDT_Secret::make('google_client_id')->ascii()->caseS()->max(191),
+			GDT_Secret::make('google_client_id')->ascii()->caseS()->max(191)->initial($clientID),
 			GDT_Secret::make('google_client_secret')->ascii()->caseS()->max(191),
-			GDT_String::make('google_redirect_uri')->ascii()->caseS()->max(1024),
+//			GDT_String::make('google_redirect_uri')->ascii()->caseS()->max(1024),
 			GDT_Checkbox::make('google_import_avatar')->initial('1'),
 		];
 	}
@@ -52,14 +59,19 @@ final class Module_GoogleAuth extends GDO_Module
 	public function cfgAuth(): bool { return $this->getConfigValue('google_auth'); }
 	public function cfgClientID(): ?string { return $this->getConfigVar('google_client_id'); }
 	public function cfgClientSecret(): ?string { return $this->getConfigVar('google_client_secret'); }
-	public function cfgRedirectURI(): ?string { return $this->getConfigVar('google_redirect_uri'); }
+//	public function cfgRedirectURI(): ?string { return $this->getConfigVar('google_redirect_uri'); }
 	public function cfgImportAvatar(): bool { return $this->getConfigValue('google_import_avatar'); }
 
 	public function isConfigured(): bool
 	{
 		return $this->cfgAuth() && (bool)$this->cfgClientID() &&
-			(bool)$this->cfgClientSecret() && (bool)$this->cfgRedirectURI();
+			(bool)$this->cfgClientSecret() && (bool)$this->getRedirectURI();
 	}
+
+    private function getRedirectURI(): string
+    {
+        return url('GoogleAuth', 'Callback');
+    }
 
 	public function hookLoginForm(GDT_Form $form): void { $this->addButton($form); }
 	public function hookRegisterForm(GDT_Form $form): void { $this->addButton($form); }
@@ -76,7 +88,7 @@ final class Module_GoogleAuth extends GDO_Module
 	{
 		return self::AUTHORIZE_URL . '?' . http_build_query([
 			'client_id' => $this->cfgClientID(),
-			'redirect_uri' => $this->cfgRedirectURI(),
+			'redirect_uri' => $this->getRedirectURI(),
 			'response_type' => 'code',
 			'scope' => 'openid email profile',
 			'state' => $state,
@@ -94,7 +106,7 @@ final class Module_GoogleAuth extends GDO_Module
 			'code' => $code,
 			'client_id' => $this->cfgClientID(),
 			'client_secret' => $this->cfgClientSecret(),
-			'redirect_uri' => $this->cfgRedirectURI(),
+			'redirect_uri' => $this->getRedirectURI(),
 			'grant_type' => 'authorization_code',
 			'code_verifier' => $verifier,
 		]);
